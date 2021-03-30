@@ -146,6 +146,41 @@ object Output {
       }
   }
 
+  final case class KVOutput[K, +V](keyOutput: Output[K], valueOutput: Output[V]) extends Output[Map[K, V]] {
+    protected def tryDecode(respValue: RespValue)(implicit codec: Codec): Map[K, V] =
+      respValue match {
+        case RespValue.Array(elements) if elements.length % 2 == 0 =>
+          val output = collection.mutable.Map.empty[K, V]
+          val len    = elements.length
+          var pos    = 0
+
+          while (pos < len) {
+            (elements(pos), elements(pos + 1)) match {
+              case (key @ RespValue.BulkString(_), value @ RespValue.BulkString(_)) =>
+                output += keyOutput.tryDecode(key) -> valueOutput.tryDecode(value)
+              case _ =>
+            }
+            pos += 2
+          }
+
+          output.toMap
+
+        case array @ RespValue.Array(_) =>
+          throw ProtocolError(s"$array doesn't have an even number of elements")
+
+        case other =>
+          throw ProtocolError(s"$other isn't an array")
+      }
+  }
+
+  final case class Tuple2Output[+A, +B](_1: Output[A], _2: Output[B]) extends Output[(A, B)] {
+    protected def tryDecode(respValue: RespValue)(implicit codec: Codec): (A, B) =
+      respValue match {
+        case RespValue.ArrayValues(a: RespValue, b: RespValue) => (_1.tryDecode(a), _2.tryDecode(b))
+        case other                                             => throw ProtocolError(s"$other isn't scan output")
+      }
+  }
+
   case object SingleOrMultiStringOutput extends Output[String] {
     protected def tryDecode(respValue: RespValue)(implicit codec: Codec): String =
       respValue match {
@@ -244,33 +279,6 @@ object Output {
       }
   }
 
-  case object KeyValueOutput extends Output[Map[String, String]] {
-    protected def tryDecode(respValue: RespValue)(implicit codec: Codec): Map[String, String] =
-      respValue match {
-        case RespValue.Array(elements) if elements.length % 2 == 0 =>
-          val output = collection.mutable.Map.empty[String, String]
-          val len    = elements.length
-          var pos    = 0
-
-          while (pos < len) {
-            (elements(pos), elements(pos + 1)) match {
-              case (key @ RespValue.BulkString(_), value @ RespValue.BulkString(_)) =>
-                output += key.asString -> value.asString
-              case _ =>
-            }
-            pos += 2
-          }
-
-          output.toMap
-
-        case array @ RespValue.Array(_) =>
-          throw ProtocolError(s"$array doesn't have an even number of elements")
-
-        case other =>
-          throw ProtocolError(s"$other isn't an array")
-      }
-  }
-
   case object StreamOutput extends Output[Map[String, Map[String, String]]] {
     protected def tryDecode(respValue: RespValue)(implicit codec: Codec): Map[String, Map[String, String]] =
       respValue match {
@@ -284,7 +292,7 @@ object Output {
     val output = collection.mutable.Map.empty[String, Map[String, String]]
     entities.foreach {
       case RespValue.Array(Seq(id @ RespValue.BulkString(_), value)) =>
-        output += (id.asString -> KeyValueOutput.unsafeDecode(value))
+        output += (id.asString -> KVOutput(MultiStringOutput, MultiStringOutput).unsafeDecode(value))
       case other =>
         throw ProtocolError(s"$other isn't a valid array")
     }
