@@ -50,7 +50,7 @@ trait Hashes {
    * @return map of `field -> value` pairs under the key
    */
   final def hGetAll[K: Schema, F: Schema, V: Schema](key: K): ZIO[RedisExecutor, RedisError, Map[F, V]] = {
-    val command = RedisCommand(HGetAll, ArbitraryInput[K](), KVOutput(ArbitraryOutput[F](), ArbitraryOutput[V]()))
+    val command = RedisCommand(HGetAll, ArbitraryInput[K](), KeyValueOutput(ArbitraryOutput[F](), ArbitraryOutput[V]()))
     command.run(key)
   }
 
@@ -163,7 +163,7 @@ trait Hashes {
     val command = RedisCommand(
       HScan,
       Tuple4(ArbitraryInput[K](), LongInput, OptionalInput(PatternInput), OptionalInput(CountInput)),
-      Tuple2Output(MultiStringOutput.map(_.toLong), KVOutput(ArbitraryOutput[F](), ArbitraryOutput[V]()))
+      Tuple2Output(MultiStringOutput.map(_.toLong), KeyValueOutput(ArbitraryOutput[F](), ArbitraryOutput[V]()))
     )
     command.run((key, cursor, pattern.map(Pattern), count))
   }

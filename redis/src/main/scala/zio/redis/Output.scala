@@ -146,7 +146,7 @@ object Output {
       }
   }
 
-  final case class KVOutput[K, +V](keyOutput: Output[K], valueOutput: Output[V]) extends Output[Map[K, V]] {
+  final case class KeyValueOutput[K, +V](keyOutput: Output[K], valueOutput: Output[V]) extends Output[Map[K, V]] {
     protected def tryDecode(respValue: RespValue)(implicit codec: Codec): Map[K, V] =
       respValue match {
         case RespValue.Array(elements) if elements.length % 2 == 0 =>
@@ -292,7 +292,7 @@ object Output {
     val output = collection.mutable.Map.empty[String, Map[String, String]]
     entities.foreach {
       case RespValue.Array(Seq(id @ RespValue.BulkString(_), value)) =>
-        output += (id.asString -> KVOutput(MultiStringOutput, MultiStringOutput).unsafeDecode(value))
+        output += (id.asString -> KeyValueOutput(MultiStringOutput, MultiStringOutput).unsafeDecode(value))
       case other =>
         throw ProtocolError(s"$other isn't a valid array")
     }
