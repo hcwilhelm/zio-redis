@@ -55,6 +55,23 @@ object Output {
       }
   }
 
+  final case class ChunkTuple2Output[+A, +B](_1: Output[A], _2: Output[B]) extends Output[Chunk[(A, B)]] {
+    protected def tryDecode(respValue: RespValue)(implicit codec: Codec): Chunk[(A, B)] =
+      respValue match {
+        case RespValue.NullArray =>
+          Chunk.empty
+
+        case RespValue.Array(values) if values.length % 2 == 0 =>
+          Chunk.fromIterator(values.grouped(2).map(g => _1.tryDecode(g(0)) -> _2.tryDecode(g(1))))
+
+        case array @ RespValue.Array(_) =>
+          throw ProtocolError(s"$array doesn't have an even number of elements")
+
+        case other =>
+          throw ProtocolError(s"$other isn't an array")
+      }
+  }
+
   case object DoubleOutput extends Output[Double] {
     protected def tryDecode(respValue: RespValue)(implicit codec: Codec): Double =
       respValue match {
@@ -150,7 +167,7 @@ object Output {
     protected def tryDecode(respValue: RespValue)(implicit codec: Codec): (A, B) =
       respValue match {
         case RespValue.ArrayValues(a: RespValue, b: RespValue) => (_1.tryDecode(a), _2.tryDecode(b))
-        case other                                             => throw ProtocolError(s"$other isn't scan output")
+        case other                                             => throw ProtocolError(s"$other isn't a tuple2")
       }
   }
 

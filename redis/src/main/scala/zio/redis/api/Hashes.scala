@@ -159,11 +159,11 @@ trait Hashes {
     cursor: Long,
     pattern: Option[String] = None,
     count: Option[Count] = None
-  ): ZIO[RedisExecutor, RedisError, (Long, Map[F, V])] = {
+  ): ZIO[RedisExecutor, RedisError, (Long, Chunk[(F, V)])] = {
     val command = RedisCommand(
       HScan,
       Tuple4(ArbitraryInput[K](), LongInput, OptionalInput(PatternInput), OptionalInput(CountInput)),
-      Tuple2Output(MultiStringOutput.map(_.toLong), KeyValueOutput(ArbitraryOutput[F](), ArbitraryOutput[V]()))
+      Tuple2Output(ArbitraryOutput[Long](), ChunkTuple2Output(ArbitraryOutput[F](), ArbitraryOutput[V]()))
     )
     command.run((key, cursor, pattern.map(Pattern), count))
   }
