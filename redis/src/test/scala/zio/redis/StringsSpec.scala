@@ -1,15 +1,15 @@
 package zio.redis
 
-import java.time.Instant
-
 import zio.clock.Clock
 import zio.duration._
-import zio.redis.RedisError.{ ProtocolError, WrongType }
+import zio.redis.RedisError.{ProtocolError, WrongType}
 import zio.test.Assertion._
-import zio.test.TestAspect.{ eventually, ignore }
+import zio.test.TestAspect.{eventually, ignore}
 import zio.test._
-import zio.test.environment.{ TestClock, TestConsole, TestRandom, TestSystem }
-import zio.{ Chunk, Has, ZIO }
+import zio.test.environment.{TestClock, TestConsole, TestRandom, TestSystem}
+import zio.{Chunk, Has, ZIO}
+
+import java.time.Instant
 
 trait StringsSpec extends BaseSpec {
   val stringsSuite: Spec[Has[Clock.Service] with Has[RedisExecutor.Service] with Has[TestClock.Service] with Has[
@@ -496,7 +496,7 @@ trait StringsSpec extends BaseSpec {
             )
           }
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("bitOp")(
         testM("AND over multiple non-empty strings") {
           for {
@@ -713,7 +713,7 @@ trait StringsSpec extends BaseSpec {
             result <- bitOp(BitOperation.NOT, dest, key).either
           } yield assert(result)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("bitPos")(
         testM("of 1 when non-empty string") {
           for {
@@ -875,7 +875,7 @@ trait StringsSpec extends BaseSpec {
             pos <- bitPos(key, false, Some(BitPosRange(4L, Some(2L)))).either
           } yield assert(pos)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("decr")(
         testM("non-empty integer") {
           for {
@@ -904,7 +904,7 @@ trait StringsSpec extends BaseSpec {
             result <- decr(key).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("decrBy")(
         testM("3 when non-empty integer") {
           for {
@@ -940,7 +940,7 @@ trait StringsSpec extends BaseSpec {
             result <- decrBy(key, 3).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("get")(
         testM("non-emtpy string") {
           for {
@@ -962,7 +962,7 @@ trait StringsSpec extends BaseSpec {
             result <- get[String, String](key).either
           } yield assert(result)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("getBit")(
         testM("from non-empty string") {
           for {
@@ -997,7 +997,7 @@ trait StringsSpec extends BaseSpec {
             bit <- getBit(key, 10L).either
           } yield assert(bit)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("getRange")(
         testM("from non-empty string") {
           for {
@@ -1054,7 +1054,7 @@ trait StringsSpec extends BaseSpec {
             substr <- getRange[String, String](key, 1 to 3).either
           } yield assert(substr)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("getSet[String, String, String]")(
         testM("non-empty value to the existing string") {
           for {
@@ -1089,7 +1089,7 @@ trait StringsSpec extends BaseSpec {
             oldVal <- getSet[String, String, String](key, "value").either
           } yield assert(oldVal)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("incr")(
         testM("non-empty integer") {
           for {
@@ -1118,7 +1118,7 @@ trait StringsSpec extends BaseSpec {
             result <- incr(key).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("incrBy")(
         testM("3 when non-empty integer") {
           for {
@@ -1154,7 +1154,7 @@ trait StringsSpec extends BaseSpec {
             result <- incrBy(key, 3).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("incrByFloat[String, String]")(
         testM("3.4 when non-empty float") {
           for {
@@ -1190,7 +1190,7 @@ trait StringsSpec extends BaseSpec {
             result <- incrByFloat[String, String](key, 3).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("mGet[String, String]")(
         testM("from multiple non-empty strings") {
           for {
@@ -1232,7 +1232,7 @@ trait StringsSpec extends BaseSpec {
             result <- mGet[String, String](key)
           } yield assert(result)(equalTo(Chunk(None)))
         }
-      ),
+      )@@ testExecutorUnsupported,
       suite("mSet")(
         testM("one new value") {
           for {
@@ -1281,7 +1281,7 @@ trait StringsSpec extends BaseSpec {
             result <- mSet((key, value)).either
           } yield assert(result)(isRight)
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("mSetNx")(
         testM("one new value") {
           for {
@@ -1326,7 +1326,7 @@ trait StringsSpec extends BaseSpec {
             set   <- mSetNx((key, value))
           } yield assert(set)(isFalse)
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("pSetEx")(
         testM("new value with 1000 milliseconds") {
           for {
@@ -1370,7 +1370,7 @@ trait StringsSpec extends BaseSpec {
             result <- pSetEx(key, (-1).millis, value).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("set")(
         testM("new value") {
           for {
@@ -1478,7 +1478,7 @@ trait StringsSpec extends BaseSpec {
             result <- set(key, value, Some(1.second), keepTtl = Some(KeepTtl))
           } yield assert(result)(isTrue)
         } @@ ignore
-      ),
+      ) @@ testExecutorUnsupported,
       suite("setBit")(
         testM("for existing key") {
           for {
@@ -1514,7 +1514,7 @@ trait StringsSpec extends BaseSpec {
             oldBit <- setBit(key, 10L, true).either
           } yield assert(oldBit)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("setEx")(
         testM("new value with 1 second ttl") {
           for {
@@ -1562,7 +1562,7 @@ trait StringsSpec extends BaseSpec {
             result <- setEx(key, (-1).second, value).either
           } yield assert(result)(isLeft(isSubtype[ProtocolError](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("setNx")(
         testM("new value") {
           for {
@@ -1587,7 +1587,7 @@ trait StringsSpec extends BaseSpec {
             result <- setNx(key, value)
           } yield assert(result)(isFalse)
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("setRange")(
         testM("in existing string") {
           for {
@@ -1622,7 +1622,7 @@ trait StringsSpec extends BaseSpec {
             len <- setRange(key, 1L, "value").either
           } yield assert(len)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("strLen")(
         testM("for non-empty string") {
           for {
@@ -1644,7 +1644,7 @@ trait StringsSpec extends BaseSpec {
             len <- strLen(key).either
           } yield assert(len)(isLeft(isSubtype[WrongType](anything)))
         }
-      ),
+      ) @@ testExecutorUnsupported,
       suite("getEx")(
         testM("value exists after removing ttl") {
           for {
@@ -1706,8 +1706,8 @@ trait StringsSpec extends BaseSpec {
             res3  <- getEx[String, String](value, true)
           } yield assert(res)(equalTo(None)) && assert(res2)(equalTo(None)) && assert(res3)(equalTo(None))
         } @@ eventually
-      ),
-      suite("getDel")(
+      ) @@ testExecutorUnsupported,
+      suite("getDel") (
         testM("error when not string") {
           for {
             key <- uuid
@@ -1730,6 +1730,6 @@ trait StringsSpec extends BaseSpec {
             notFound <- getDel[String, String](key)
           } yield assert(res)(equalTo(Some(value))) && assert(notFound)(equalTo(None))
         }
-      )
+      ) @@ testExecutorUnsupported
     )
 }

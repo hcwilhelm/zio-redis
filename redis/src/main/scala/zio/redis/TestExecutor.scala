@@ -1,16 +1,16 @@
 package zio.redis
 
-import scala.annotation.tailrec
-import scala.collection.compat.immutable.LazyList
-import scala.util.Try
-
 import zio._
 import zio.duration._
 import zio.redis.RedisError.ProtocolError
-import zio.redis.RespValue.{ BulkString, bulkString }
+import zio.redis.RespValue.{BulkString, bulkString}
 import zio.redis.codec.StringUtf8Codec
 import zio.schema.codec.Codec
-import zio.stm.{ random => _, _ }
+import zio.stm.{random => _, _}
+
+import scala.annotation.tailrec
+import scala.collection.compat.immutable.LazyList
+import scala.util.Try
 
 private[redis] final class TestExecutor private (
   lists: TMap[String, Chunk[String]],
@@ -314,6 +314,47 @@ private[redis] final class TestExecutor private (
             } yield RespValue.array(RespValue.bulkString(nextIndex.toString), results)
           }
         )
+
+      case api.Strings.Append =>
+        val key = input(0).asString
+        val value = input(1).asString
+
+        orWrongType(isString(key))(
+          {
+            for {
+              str <- strings.getOrElse(key, "")
+              result = str + value
+              _ <- strings.put(key, result)
+            } yield RespValue.Integer(result.length.toLong)
+          }
+        )
+
+      case api.Strings.BitCount =>
+        val key = input(0).asString
+        val maybeRange =
+          if (input.size > 2)
+            Some(Range(input(1).asLong.toInt, input(2).asLong.toInt))
+          else None
+
+        def countBits(b: Byte): Int = b.toInt.toBinaryString.count(_ == '1')
+
+        def extractRange(bytes: Array[Byte]) = {
+          maybeRange.map { range =>
+            val start = if (range.start < 0) bytes.length + range.start else range.start
+            val end = if (range.end < 0) bytes.length + range.end else range.end
+            bytes.slice(start, end + 1)
+          }.getOrElse(bytes)
+        }
+
+        orWrongType(isString(key))(
+          {
+            for {
+              str <- strings.getOrElse(key, "")
+              result = (extractRange(str.getBytes) map countBits).sum
+            } yield RespValue.Integer(result.toLong)
+          }
+        )
+
 
       case api.Strings.Set =>
         // not a full implementation. Just enough to make set tests work
@@ -2167,6 +2208,16 @@ private[redis] final class TestExecutor private (
       isHyper  <- hyperLogLogs.contains(name)
       isHash   <- hashes.contains(name)
     } yield !isString && !isSet && !isList && !isHyper && !isHash
+
+  //check whether the key is a string or unused.
+  private[this] def isString(name: String): ZSTM[Any, Nothing, Boolean] =
+    for {
+      isZSet   <- sortedSets.contains(name)
+      isSet    <- sets.contains(name)
+      isList   <- lists.contains(name)
+      isHyper  <- hyperLogLogs.contains(name)
+      isHash   <- hashes.contains(name)
+    } yield !isZSet && !isSet && !isList && !isHyper && !isHash
 
   @tailrec
   private[this] def dropWhileLimit[A](xs: Chunk[A])(p: A => Boolean, k: Int): Chunk[A] =
