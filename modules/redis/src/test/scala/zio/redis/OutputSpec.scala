@@ -9,7 +9,7 @@ import zio.test.Assertion._
 import zio.test._
 
 object OutputSpec extends BaseSpec {
-  def spec: Spec[Any, Throwable] =
+  def spec: BeginSearchSpec[Any, Throwable] =
     suite("Output decoders")(
       suite("errors")(
         test("protocol errors") {

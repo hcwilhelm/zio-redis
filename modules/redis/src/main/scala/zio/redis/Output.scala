@@ -17,6 +17,7 @@
 package zio.redis
 
 import zio._
+import zio.redis.RedisError.ProtocolError
 import zio.redis.internal.PubSub.{PushMessage, SubscriptionKey}
 import zio.redis.internal.RespValue
 import zio.redis.options.Cluster.{Node, Partition, SlotRange}
@@ -67,6 +68,103 @@ object Output {
       respValue match {
         case RespValue.BulkString(value) => value
         case other                       => throw ProtocolError(s"$other isn't a bulk string")
+      }
+  }
+
+  case object AclDryrunOutput extends Output[String] {
+    override protected def tryDecode(respValue: RespValue): String =
+      respValue match {
+        case s @ RespValue.BulkString(_) => s.asString
+        case RespValue.SimpleString(s)   => s
+        case other                       => throw ProtocolError(s"$other isn't a bulk string or simple string")
+      }
+  }
+
+  case class ArrayEntryOutput[+A](output: Output[A]) extends Output[ArrayEntry[A]] {
+    override protected def tryDecode(respValue: RespValue): ArrayEntry[A] =
+      respValue match {
+        case RespValue.NullArray     => ArrayEntry.empty
+        case RespValue.Array(values) => ArrayEntry.Array(values.map(tryDecode))
+        case entry                   => ArrayEntry.Entry(output.tryDecode(entry))
+      }
+  }
+
+  case object LogEntryOutput extends Output[LogEntry] {
+    override protected def tryDecode(respValue: RespValue): LogEntry =
+      respValue match {
+        case RespValue.Array(values) =>
+          val count                = LongOutput.unsafeDecode(values(1))
+          val reason               = MultiStringOutput.unsafeDecode(values(3))
+          val context              = MultiStringOutput.unsafeDecode(values(5))
+          val `object`             = MultiStringOutput.unsafeDecode(values(7))
+          val username             = MultiStringOutput.unsafeDecode(values(9))
+          val ageSeconds           = MultiStringOutput.unsafeDecode(values(11))
+          val clientInfo           = MultiStringOutput.unsafeDecode(values(13))
+          val entryId              = LongOutput.unsafeDecode(values(15))
+          val timestampCreated     = LongOutput.unsafeDecode(values(17))
+          val timestampLastUpdated = LongOutput.unsafeDecode(values(19))
+
+          LogEntry(
+            count,
+            reason,
+            context,
+            `object`,
+            username,
+            ageSeconds,
+            clientInfo,
+            entryId,
+            timestampCreated,
+            timestampLastUpdated
+          )
+
+        case other => throw ProtocolError(s"$other isn't an non empty array")
+      }
+  }
+
+  case object CommandEntryOutput extends Output[CommandEntry] {
+    override protected def tryDecode(respValue: RespValue): CommandEntry =
+      respValue match {
+        case RespValue.Array(values) =>
+          val name              = MultiStringOutput.unsafeDecode(values(0))
+          val arity             = LongOutput.unsafeDecode(values(1))
+          val flags             = ChunkOutput(MultiStringOutput).unsafeDecode(values(2))
+          val firstKey          = LongOutput.unsafeDecode(values(3))
+          val lastKey           = LongOutput.unsafeDecode(values(4))
+          val step              = LongOutput.unsafeDecode(values(5))
+          val aclCategories     = ChunkOutput(MultiStringOutput).unsafeDecode(values(6))
+          val tips              = ChunkOutput(MultiStringOutput).unsafeDecode(values(7))
+          val keySpecifications = ???
+          val subcommands       = ChunkOutput(MultiStringOutput).unsafeDecode(values(9))
+
+          CommandEntry(name, arity, flags, firstKey, lastKey, step, aclCategories, tips, keySpecifications, subcommands)
+
+        case other => throw ProtocolError(s"$other isn't an non empty array")
+      }
+  }
+
+  case object KeySpecificationOutput extends Output[CommandKeySpec] {
+    override protected def tryDecode(respValue: RespValue): CommandKeySpec =
+      respValue match {
+        case RespValue.Array(values) =>
+          val beginSearchIdx = values.indexOf(RespValue.bulkString("begin_search"))
+          val findKeysIdx    = values.indexOf(RespValue.bulkString("find_keys"))
+          val flagsIdx       = values.indexOf(RespValue.bulkString("flags"))
+          val notesIdx       = values.indexOf(RespValue.bulkString("notes"))
+
+
+          CommandKeySpec()
+          ???
+
+        case other => throw ProtocolError(s"$other isn't an non empty array")
+      }
+  }
+
+  case object BeginSearchOutout extends Output[BeginSearch] {
+    override protected def tryDecode(respValue: RespValue): _root_.zio.redis.BeginSearch =
+      respValue match {
+        case RespValue.Array(values) =>
+
+        case other => throw ProtocolError(s"$other isn't an non empty array")
       }
   }
 

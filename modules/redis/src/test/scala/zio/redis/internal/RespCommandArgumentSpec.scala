@@ -4,7 +4,7 @@ import zio.redis._
 import zio.test._
 
 object RespCommandArgumentSpec extends BaseSpec {
-  def spec: Spec[Any, RedisError.ProtocolError] =
+  def spec: BeginSearchSpec[Any, RedisError.ProtocolError] =
     suite("RespArgument")(
       suite("BulkString.asCRC16")(
         test("key without braces") {

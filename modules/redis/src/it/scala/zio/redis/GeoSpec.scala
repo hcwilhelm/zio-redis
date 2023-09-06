@@ -5,7 +5,7 @@ import zio.test._
 import zio.{Chunk, ZIO}
 
 trait GeoSpec extends BaseSpec {
-  def geoSuite: Spec[Redis, RedisError] =
+  def geoSuite: BeginSearchSpec[Redis, RedisError] =
     suite("geo")(
       test("geoAdd followed by geoPos") {
         import GeoSpec.Serbia._

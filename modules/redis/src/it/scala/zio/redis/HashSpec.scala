@@ -5,7 +5,7 @@ import zio.test._
 import zio.{Chunk, ZIO}
 
 trait HashSpec extends BaseSpec {
-  def hashSuite: Spec[Redis, RedisError] =
+  def hashSuite: BeginSearchSpec[Redis, RedisError] =
     suite("hash")(
       suite("hSet, hGet, hGetAll and hDel")(
         test("set followed by get") {

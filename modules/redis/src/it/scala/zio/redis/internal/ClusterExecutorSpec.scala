@@ -6,7 +6,7 @@ import zio.redis.options.Cluster.{Slot, SlotsAmount}
 import zio.test._
 
 object ClusterExecutorSpec extends BaseSpec {
-  def spec: Spec[TestEnvironment, Any] =
+  def spec: BeginSearchSpec[TestEnvironment, Any] =
     suite("cluster executor")(
       test("check cluster responsiveness when ASK redirect happens") {
         for {

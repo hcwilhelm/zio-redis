@@ -6,7 +6,7 @@ import zio.test.TestAspect._
 import zio.test._
 
 trait ConnectionSpec extends BaseSpec {
-  def connectionSuite: Spec[Redis, RedisError] =
+  def connectionSuite: BeginSearchSpec[Redis, RedisError] =
     suite("connection")(
       suite("authenticating")(
         test("auth with 'default' username") {

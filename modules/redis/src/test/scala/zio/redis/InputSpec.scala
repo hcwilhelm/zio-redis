@@ -18,7 +18,7 @@ object InputSpec extends BaseSpec {
   import RadiusUnit._
   import LcsQueryType._
 
-  def spec: Spec[Any, Throwable] =
+  def spec: BeginSearchSpec[Any, Throwable] =
     suite("Input encoders")(
       suite("AbsTtl")(
         test("valid value") {

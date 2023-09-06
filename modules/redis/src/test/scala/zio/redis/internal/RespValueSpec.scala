@@ -7,7 +7,7 @@ import zio.test.Assertion._
 import zio.test._
 
 object RespValueSpec extends ZIOSpecDefault {
-  def spec: Spec[Any, RedisError.ProtocolError] =
+  def spec: BeginSearchSpec[Any, RedisError.ProtocolError] =
     suite("RespValue")(
       test("serializes and deserializes messages") {
         val values = Chunk(

@@ -7,7 +7,7 @@ import zio.test.TestAspect.{flaky, ignore}
 import zio.test._
 
 trait StreamsSpec extends BaseSpec {
-  def streamsSuite: Spec[Redis, RedisError] =
+  def streamsSuite: BeginSearchSpec[Redis, RedisError] =
     suite("streams")(
       suite("xAck")(
         test("one message") {

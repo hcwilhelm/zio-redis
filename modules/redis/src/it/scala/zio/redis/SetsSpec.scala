@@ -7,7 +7,7 @@ import zio.test.Assertion._
 import zio.test._
 
 trait SetsSpec extends BaseSpec {
-  def setsSuite: Spec[Redis, RedisError] =
+  def setsSuite: BeginSearchSpec[Redis, RedisError] =
     suite("sets")(
       suite("sAdd")(
         test("to empty set") {

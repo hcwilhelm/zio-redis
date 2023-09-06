@@ -12,7 +12,7 @@ import zio.test._
 import scala.util.Random
 
 trait ScriptingSpec extends BaseSpec {
-  def scriptingSpec: Spec[Redis, RedisError] =
+  def scriptingSpec: BeginSearchSpec[Redis, RedisError] =
     suite("scripting")(
       suite("eval")(
         test("put boolean and return existence of key") {
